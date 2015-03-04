@@ -42,6 +42,7 @@ def logData(dataFile,logQueue):
         log=logQueue.get()
         jsonData=json.dumps(log)
         logFile.write(jsonData+"\n")
+	logFile.flush()
 
 
 logQueue = Queue.Queue()
