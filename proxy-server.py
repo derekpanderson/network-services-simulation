@@ -1,9 +1,8 @@
 from twisted.internet import reactor
 from twisted.web import resource, server
 from twisted.python import log
-from twisted.internet.defer import DeferredQueue
 import thread
-import time
+import datetime
 import os.path
 import urllib
 import Queue
@@ -36,20 +35,37 @@ class MyResource(resource.Resource):
         return filedata    
 
 def logData(dataFile,logQueue):
-    logFile=open(dataFile,'a')
-    
+    hour=datetime.datetime.now().time().hour
+    day=datetime.date.today().day
+    month=datetime.date.today().month
+    year=datetime.date.today().year
+
+    fileName=dataFile+"-"+str(month)+"-"+str(day)+"-"+str(year)+"-"+str(hour)
+    logFile=open(fileName,'a')
     while True:
         log=logQueue.get()
+        if hour < datetime.datetime.now().time().hour:
+            hour=datetime.datetime.now().time().hour
+            day=datetime.date.today().day
+            month=datetime.date.today().month
+            year=datetime.date.today().year
+
+            fileName=dataFile+"-"+str(month)+"-"+str(day)+"-"+str(year)+"-"+str(hour)
+            logFile.close()
+            logFile=open(fileName,'a')
+            
         jsonData=json.dumps(log)
         logFile.write(jsonData+"\n")
 	logFile.flush()
 
 
 logQueue = Queue.Queue()
-thread.start_new_thread(logData,("logfile.log",logQueue))
+thread.start_new_thread(logData,("logfile",logQueue))
 
 site = server.Site(MyResource("https://www.youtube.com/watch?v=nfWlot6h_JM","/tmp/youtube.html",logQueue))
 reactor.listenTCP(80, site)
 reactor.listenTCP(8080, site)
+reactor.listenTCP(3128, site)
+reactor.listenTCP(9064, site)
 reactor.run() 
 
