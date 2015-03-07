@@ -3,6 +3,7 @@ from twisted.web import resource, server
 from twisted.python import log
 import thread
 import datetime
+import time
 import os.path
 import urllib
 import Queue
@@ -25,7 +26,7 @@ class MyResource(resource.Resource):
         logs['args']= request.args
         logs['ip']= request.getClientIP()
         logs['port']= request.getHost().port
-
+        logs['time']=time.time()
         self.logQueue.put(logs)
 
         filedata=open(self.filename,'r').read()
@@ -35,25 +36,23 @@ class MyResource(resource.Resource):
         return filedata    
 
 def logData(dataFile,logQueue):
-    hour=datetime.datetime.now().time().hour
     day=datetime.date.today().day
     month=datetime.date.today().month
     year=datetime.date.today().year
 
-    fileName=dataFile+"-"+str(month)+"-"+str(day)+"-"+str(year)+"-"+str(hour)
+    fileName=dataFile+"-"+str(month)+"-"+str(day)+"-"+str(year)
     logFile=open(fileName,'a')
     while True:
         log=logQueue.get()
-        if hour < datetime.datetime.now().time().hour:
-            hour=datetime.datetime.now().time().hour
+        if day < datetime.date.today().day:
             day=datetime.date.today().day
             month=datetime.date.today().month
             year=datetime.date.today().year
 
-            fileName=dataFile+"-"+str(month)+"-"+str(day)+"-"+str(year)+"-"+str(hour)
+            fileName=dataFile+"-"+str(month)+"-"+str(day)+"-"+str(year)
             logFile.close()
             logFile=open(fileName,'a')
-            
+
         jsonData=json.dumps(log)
         logFile.write(jsonData+"\n")
 	logFile.flush()
